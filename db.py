@@ -3,7 +3,7 @@ import sqlite3
 
 root = Tk()
 root.title('EtcD: To Do List')
-root.geometry('480x500')
+root.geometry('460x500')
 
 
 conn = sqlite3.connect('todo.db')
@@ -22,7 +22,11 @@ c.execute("""
 conn.commit()
 
 def remove(id):
-    pass
+    def _remove():
+        c.execute("DELETE FROM todo WHERE id = ?",(id, ))
+        conn.commit()
+        render_todos()
+    return _remove
 
 #Currying! _retrasa una funcion preexistente
 def complete(id):
@@ -35,7 +39,9 @@ def complete(id):
 
 def render_todos():
     rows = c.execute("SELECT * FROM todo").fetchall()
-    print(rows)
+
+    for widget in frame.winfo_children():
+        widget.destroy()
 
     for i in range(0, len(rows)):
         id = rows[i][0]
