@@ -3,7 +3,8 @@ import sqlite3
 
 root = Tk()
 root.title('EtcD: To Do List')
-root.geometry('500x500')
+root.geometry('480x500')
+
 
 conn = sqlite3.connect('todo.db')
 
@@ -20,13 +21,44 @@ c.execute("""
 
 conn.commit()
 
+def remove(id):
+    pass
+
+#Currying! _retrasa una funcion preexistente
+def complete(id):
+    def _complete():
+        todo = c.execute("SELECT * from todo WHERE id = ?",(id, )).fetchone()
+        c.execute("UPDATE todo SET completed = ? WHERE id = ?", (not todo[3], id))
+        render_todos()
+        conn.commit() 
+    return _complete
+
+def render_todos():
+    rows = c.execute("SELECT * FROM todo").fetchall()
+    print(rows)
+
+    for i in range(0, len(rows)):
+        id = rows[i][0]
+        completed = rows[i][3]
+        description = rows[i][2]
+        color = '#186429' if completed else '#842029' 
+        l = Checkbutton(frame, text=description,fg=color, width=45, anchor='w', command= complete(id))
+        l.grid(row=i, column=0, sticky='w')
+        btn = Button(frame, text='Eliminar', command=remove(id))
+        btn.grid(row=i, column=1)
+        l.select() if completed else l.deselect()
+
 def addTodo():
     todo = e.get()
-    c.execute("""
-              INSERT INTO todo (description, completed) VALUES (?, ?)
-              """,(todo, False))
-    conn.commit()
-    e.delete(0,END)
+    if todo:
+        c.execute("""
+                  INSERT INTO todo (description, completed) VALUES (?, ?)
+                  """,(todo, False))
+        conn.commit()
+        e.delete(0,END)
+        render_todos()
+    else:
+        pass
 
 l = Label(root, text='Tarea')
 l.grid(row=0, column=0)
@@ -37,10 +69,11 @@ e.grid(row=0, column=1)
 btn = Button(root, text='Agregar', command=addTodo)
 btn.grid(row=0, column=2)
 
-frame = LabelFrame(root, text='Mis Tareas', padx=5, pady=5)
-frame.grid(row=1, column=0, columnspan=3, sticky='nswe', padx=5)
+frame = LabelFrame(root, text='Mis Tareas', padx=5, pady=5, labelanchor='n')
+frame.grid(row=1, column=0, columnspan=3, sticky='nsew', padx=5)
 
 e.focus()
 
 root.bind('<Return>', lambda x: addTodo())
+render_todos()
 root.mainloop()
